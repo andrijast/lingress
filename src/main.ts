@@ -37,7 +37,7 @@ export function encode(text: unicode_string): byte_array {
         const code = hm2.encode(word)
         if (code)
             ret.appendString(code)
-        else throw new Error("what happened??")
+        else throw new Error(`what happened?? ${word}`)
     }
 
     // console.log(additions);
@@ -100,6 +100,6 @@ async function run(input: unicode_string) {
 
 }
 
-run(await Bun.file("./examples/data_compression_wiki_page_raw.txt").text());
+run(await Bun.file("./examples/enwik5.txt").text());
 
 
