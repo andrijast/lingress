@@ -2,16 +2,14 @@ import type { byte_array, dict_entry, unicode_string } from "./utility";
 import { BinaryStream } from "./utility";
 import { pack_data, unpack_data } from "./Format";
 import { tokenize, stylize } from "./Lexing";
-import { HuffmanTree } from "./HuffmanTree";
+import { HuffmanTree, full_dict, combineDicts } from "./HuffmanTree";
 
 
 export function encode(text: unicode_string): byte_array {
 
     const words = tokenize(text);
 
-    let dict = full_dict.slice(0, 65535)
-
-    const hm1 = new HuffmanTree(dict);
+    const hm1 = new HuffmanTree();
     const additions = new Set<string>();
     let max_rank = 0;
     for (const word of words) {
@@ -27,10 +25,10 @@ export function encode(text: unicode_string): byte_array {
     [...additions].forEach(word => {
         appendix.push({word: word, freq: 1_000_000})
     })
-    dict = combineDicts(full_dict.slice(0, max_rank), appendix);
+    const dict = combineDicts(full_dict.slice(0, max_rank), appendix);
     // console.log(additions)
 
-    // max_rank = Math.min(max_rank, 65535);
+    max_rank = Math.min(max_rank, 65535);
 
     const hm2 = new HuffmanTree(dict);
     const ret = new BinaryStream();
@@ -56,7 +54,7 @@ export function decode(cipher: byte_array): unicode_string | null {
 
     const [additions, dict_sz, coding] = unpack_data(cipher);
 
-    let dict = full_dict.slice(0, dict_sz);
+    const dict = full_dict.slice(0, dict_sz);
     additions.forEach(word => {
         dict.push({word: word, freq: 1_000_000})
     });
@@ -90,23 +88,6 @@ export function decode(cipher: byte_array): unicode_string | null {
 
 }
 
-
-export async function getBaseDict(): Promise<dict_entry[]> {
-    const dict_string = await Bun.file("./dictionary/unigram_freq.csv").text();
-    const dict_array = dict_string.split('\n').slice(1, -1);
-    const dict = dict_array.map(x => x.split(',')).map(x => ({word: x[0], freq: +x[1]}))
-    // add extensions
-    dict.sort((a, b) => b.freq - a.freq);
-    return dict
-}
-
-function combineDicts(first: dict_entry[], second: dict_entry[]): dict_entry[] {
-    const both = [...first, ...second];
-    both.sort((a, b) => b.freq - a.freq);
-    return both;
-}
-
-const full_dict = await getBaseDict();
 
 async function run(input: unicode_string) {
 

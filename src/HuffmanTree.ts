@@ -50,7 +50,9 @@ export class HuffmanTree implements IHuffmanTree {
         return node;
     }
 
-    constructor(data: dict_entry[]) {
+    constructor(data?: dict_entry[]) {
+
+        data = data ?? full_dict.slice(0, 65535);
 
         this.map = SortedMap.from([])
 
@@ -129,4 +131,30 @@ export class HuffmanTree implements IHuffmanTree {
         }
     }
 }
+
+export function combineDicts(first: dict_entry[], second: dict_entry[]): dict_entry[] {
+    const both = [...first, ...second];
+    both.sort((a, b) => b.freq - a.freq);
+    return both;
+}
+
+export async function getBaseDict(): Promise<dict_entry[]> {
+    const words = (await Bun.file("./dictionary/dict_words.csv").text()).split('\n').slice(1, -1);
+    const contractions = (await Bun.file("./dictionary/dict_contractions.csv").text()).split('\n').slice(1, -1);
+    const ascii = (await Bun.file("./dictionary/dict_ascii.csv").text()).split('\n').slice(1, -1);
+    const more_ascii = [{word: ",", freq: 1000000000}, {word: "\n", freq: 1000000000}]
+
+    return combineDicts(
+        combineDicts(
+            words.map(x => x.split(',')).map(x => ({word: x[0], freq: +x[1]})),
+            contractions.map(x => x.split(',')).map(x => ({word: x[0], freq: +x[1]}))
+        ),
+        combineDicts(
+            ascii.map(x => x.split(',')).map(x => ({word: x[0], freq: +x[1]})),
+            more_ascii
+        )
+    )
+}
+
+export const full_dict = await getBaseDict();
 
