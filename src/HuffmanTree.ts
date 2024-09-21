@@ -1,9 +1,9 @@
 import { SortedMap } from "@rimbu/sorted";
-import { BinaryStream } from "./BinaryStream";
+import { BinaryStream, type dict_entry } from "./utility";
 
 export interface IHuffmanTree {
     encode(str: string): string | null;
-    decode(bs: BinaryStream): (string | null)[];
+    decode(bs: BinaryStream): string | null;
 }
 
 class Node {
@@ -16,12 +16,11 @@ class Node {
     left: Node | null = null;
     right: Node | null = null;
 
-    constructor(data: {word: string | null, freq: number}, rank?: number) {
-        this.freq = data.freq
-        this.word = data.word
+    constructor(word: string | null, freq: number, rank?: number) {
+        this.freq = freq
+        this.word = word
         this.rank = rank
     }
-
 }
 
 export class HuffmanTree implements IHuffmanTree {
@@ -51,14 +50,14 @@ export class HuffmanTree implements IHuffmanTree {
         return node;
     }
 
-    constructor(data: {word: string, freq: number}[]) {
+    constructor(data: dict_entry[]) {
 
         this.map = SortedMap.from([])
 
         let rank = 1;
         for (const x of data) {
             // if (rank > 65000) break;
-            const node = new Node(x, rank++)
+            const node = new Node(x.word, x.freq, rank++)
             this.pushNode(node)
         }
 
@@ -78,7 +77,7 @@ export class HuffmanTree implements IHuffmanTree {
 
             if (!left || !right) return;
 
-            const node = new Node({word: null, freq: left.freq + right.freq})
+            const node = new Node(null, left.freq + right.freq)
             node.left = left;
             node.right = right;
 
@@ -112,24 +111,19 @@ export class HuffmanTree implements IHuffmanTree {
         return node.rank ?? null;
     }
 
-    public decode(bs: BinaryStream): string[] {
-        const ret = []
-        let node: Node = this.root as Node;
+    public decode(bs: BinaryStream): string | null {
+        if (!this.root) throw new Error("should not happen");
+        let node: Node = this.root;
         while (true) {
             const c = bs.take()
-            if (c === null) break;
+            if (c === null) return null;
             if (!node.left || !node.right) throw new Error("should not happen");
             if (c === "0") node = node.left;
             else if (c === "1") node = node.right;
             if (node.word) {
-                ret.push(node.word);
-                if (!this.root) throw new Error("should not happen");
-                node = this.root;
+                return node.word;
             }
         }
-        return ret;
     }
-
-
 }
 

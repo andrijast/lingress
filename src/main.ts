@@ -1,8 +1,8 @@
 import type { byte_array, unicode_string } from "./utility";
+import { BinaryStream } from "./utility";
+import { pack_data, unpack_data } from "./Format";
+import { tokenize, stylize } from "./Lexing";
 import { HuffmanTree } from "./HuffmanTree";
-import { BinaryStream } from "./BinaryStream";
-import { tokenize, stylize } from "./lexer";
-import { pack_data, unpack_data } from "./structure";
 
 
 export function encode(text: unicode_string): byte_array {
@@ -27,6 +27,8 @@ export function encode(text: unicode_string): byte_array {
     [...additions].forEach(word => {
         dict.push({word: word, freq: 1_000_000})
     })
+    // console.log(dict)
+    // console.log(additions)
 
     // max_rank = Math.min(max_rank, 65535);
 
@@ -46,6 +48,10 @@ export function encode(text: unicode_string): byte_array {
     return pack_data([...additions], max_rank, ret.toBytes());
 }
 
+function decode_header(bs: BinaryStream): number {
+    return 0;
+}
+
 export function decode(cipher: byte_array): unicode_string | null {
 
     const [additions, dict_sz, coding] = unpack_data(cipher);
@@ -57,10 +63,19 @@ export function decode(cipher: byte_array): unicode_string | null {
 
     const hm = new HuffmanTree(dict);
 
+    const words: unicode_string[] = [];
+
     try {
 
         const bs = new BinaryStream(coding);
-        const words = hm.decode(bs);
+        const which = decode_header(bs);
+        switch (which) {
+            case 0: {
+                const word = hm.decode(bs);
+                if (word)
+                    words.push(word);
+            }
+        }
         const ret = stylize(words);
 
         return ret;
@@ -100,6 +115,6 @@ async function run(input: unicode_string) {
 
 }
 
-run(await Bun.file("./examples/enwik5.txt").text());
+run(await Bun.file("./samples/enwik5.txt").text());
 
 
