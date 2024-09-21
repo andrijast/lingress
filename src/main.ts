@@ -1,4 +1,4 @@
-import type { byte_array, unicode_string } from "./utility";
+import type { byte_array, dict_entry, unicode_string } from "./utility";
 import { BinaryStream } from "./utility";
 import { pack_data, unpack_data } from "./Format";
 import { tokenize, stylize } from "./Lexing";
@@ -23,11 +23,11 @@ export function encode(text: unicode_string): byte_array {
         }
     }
 
-    dict = full_dict.slice(0, max_rank);
+    const appendix: dict_entry[] = [];
     [...additions].forEach(word => {
-        dict.push({word: word, freq: 1_000_000})
+        appendix.push({word: word, freq: 1_000_000})
     })
-    // console.log(dict)
+    dict = combineDicts(full_dict.slice(0, max_rank), appendix);
     // console.log(additions)
 
     // max_rank = Math.min(max_rank, 65535);
@@ -90,10 +90,23 @@ export function decode(cipher: byte_array): unicode_string | null {
 
 }
 
-const full_dict_string = await Bun.file("./dictionary/unigram_freq.csv").text();
-const full_dict_array = full_dict_string.split('\n').slice(1, -1);
-const full_dict = full_dict_array.map(x => x.split(',')).map(x => ({word: x[0], freq: +x[1]}))
 
+export async function getBaseDict(): Promise<dict_entry[]> {
+    const dict_string = await Bun.file("./dictionary/unigram_freq.csv").text();
+    const dict_array = dict_string.split('\n').slice(1, -1);
+    const dict = dict_array.map(x => x.split(',')).map(x => ({word: x[0], freq: +x[1]}))
+    // add extensions
+    dict.sort((a, b) => b.freq - a.freq);
+    return dict
+}
+
+function combineDicts(first: dict_entry[], second: dict_entry[]): dict_entry[] {
+    const both = [...first, ...second];
+    both.sort((a, b) => b.freq - a.freq);
+    return both;
+}
+
+const full_dict = await getBaseDict();
 
 async function run(input: unicode_string) {
 

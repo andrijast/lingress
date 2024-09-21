@@ -32,8 +32,8 @@ export class HuffmanTree implements IHuffmanTree {
     private pushNode(node: Node) {
         if (this.map.hasKey(node.freq)) {
             const val = this.map.get(node.freq);
-            if (val)
-                val.push(node);
+            if (!val) throw new Error("what the fuck?")
+            val.push(node);
         } else {
             this.map = this.map.addEntry([node.freq, [node]])
         }
@@ -70,12 +70,16 @@ export class HuffmanTree implements IHuffmanTree {
     }
 
     private construct() {
-        while (this.map.size >= 2) {
+        while (true) {
 
             const left = this.popNode()
             const right = this.popNode()
 
-            if (!left || !right) return;
+            if (!right || !left) {
+                if (!left) throw new Error("should not happen");
+                this.root = left
+                return;
+            }
 
             const node = new Node(null, left.freq + right.freq)
             node.left = left;
@@ -84,7 +88,6 @@ export class HuffmanTree implements IHuffmanTree {
             this.pushNode(node)
 
         }
-        this.root = this.popNode()
     }
 
 
