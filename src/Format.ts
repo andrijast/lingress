@@ -4,14 +4,17 @@ import type { byte_array, unicode_string } from "./utility";
 
 export function pack_data(additions: unicode_string[], dict_sz: number, coding: byte_array): byte_array {
 
-    const line = additions.join(' '); // assuming no space in additions
-    const line_bin = new TextEncoder().encode(line);
-    const addon = Bun.gzipSync(line_bin);
+    additions.forEach(str => {
+        if (str.includes('\x00'))
+            throw new Error("zero-byte in text not supported!");
+    });
+
+    const addon = new TextEncoder().encode(additions.join('\x00'));
 
     if (!addon || !coding) throw new Error("Something bad happened");
 
     const addon_sz = addon.length;
-    if (addon_sz >= 65536 || dict_sz >= 65536) throw new Error("Unfortunate");
+    if (addon_sz >= 65536 || dict_sz >= 65536) throw new Error("Unfortunate, probably addon too big");
     const lead = new Uint8Array([dict_sz&0xFF, (dict_sz>>8)&0xFF, addon_sz&0xFF, (addon_sz>>8)&0xFF]);
 
     return new Uint8Array([...lead, ...addon, ...coding]);
@@ -24,8 +27,8 @@ export function unpack_data(cipher: byte_array): [unicode_string[], number, byte
     const dict_sz = (dh << 8) | dl;
     const addon_sz = (ah << 8) | al;
 
-    const addon = Bun.gunzipSync(cipher.slice(4, 4 + addon_sz));
-    const additions = new TextDecoder().decode(addon).split(' ');
+    const addon = cipher.slice(4, 4 + addon_sz);
+    const additions = new TextDecoder().decode(addon).split('\x00');
 
     const coding = cipher.slice(4 + addon_sz);
 

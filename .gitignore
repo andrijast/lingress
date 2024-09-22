@@ -1,5 +1,6 @@
 node_modules/
 *.zip
 *.ignore
-*.ignore.md
+*.ignore.*
 *.big.txt
+debug/

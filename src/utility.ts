@@ -1,3 +1,4 @@
+import { appendFileSync } from "node:fs";
 
 export type byte_array = Uint8Array;
 export type ascii_string = string;
@@ -58,19 +59,34 @@ export function showBinary(buf: byte_array, sep: string = ' ') {
     console.log(binaryString);
 }
 
+const first_time = new Set<string>();
+
+export async function debug(filename: string, content: any) {
+    const file = (typeof content === "string") ?
+        `./debug/${filename}.log.txt`:
+        `./debug/${filename}.log.js`;
+    const line = (typeof content === "string") ?
+        `${content}\n`:
+        `${Bun.inspect(content)}\n`;
+    if (!first_time.has(filename)) {
+        Bun.write(file, line);
+        first_time.add(filename);
+    }
+    else {
+        appendFileSync(file, line);
+    }
+}
+
 
 function test() {
 
     const bs = new BinaryStream();
 
-    bs.appendString("001");
+    bs.appendString("01");
     bs.appendString("1101");
-    bs.appendString("1010");
 
     showBinary(bs.toBytes());
 
-    console.log(bs.take())
-    console.log(bs.take())
     console.log(bs.take())
     console.log(bs.take())
     console.log(bs.take())
@@ -78,6 +94,8 @@ function test() {
     showBinary(bs.toBytes());
     // 00111011 010'00000
 
+    debug("test", "something");
+    debug("test", "something else");
 }
 
 if (import.meta.main) {

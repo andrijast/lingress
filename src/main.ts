@@ -1,5 +1,5 @@
 import type { byte_array, dict_entry, unicode_string } from "./utility";
-import { BinaryStream } from "./utility";
+import { BinaryStream, debug } from "./utility";
 import { pack_data, unpack_data } from "./Format";
 import { tokenize, stylize } from "./Lexing";
 import { HuffmanTree, full_dict, combineDicts } from "./HuffmanTree";
@@ -94,18 +94,17 @@ async function run(input: unicode_string) {
     const org_sz = new Blob([input]).size
     console.log(`original size: ${org_sz}`)
 
-    const com = encode(input)
-    const com_sz = com.length
-    console.log(`compressed size: ${com_sz}`)
+    const enc = encode(input)
+    const enc_sz = enc.length
+    console.log(`compressed size: ${enc_sz}`)
 
-    const ratio = (org_sz - com_sz) / org_sz * 100
-    console.log(`compression ration: ${ratio.toFixed(2)}%`)
+    const ratio = (org_sz - enc_sz) / org_sz * 100
+    console.log(`compression ratio: ${ratio.toFixed(2)}%`)
 
-    const dec = decode(com)
-    // console.log("Preview:")
-    // console.log(dec)
-
-    // await Bun.write("./examples/out.txt", dec ?? "");
+    const dec = decode(enc)
+    const dec_sz = new Blob([dec]).size
+    console.log(`decompressed size: ${dec_sz}`)
+    debug("decompressed", dec);
 
 }
 
