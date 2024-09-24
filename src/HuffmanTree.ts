@@ -1,5 +1,5 @@
 import { SortedMap } from "@rimbu/sorted";
-import { BinaryStream, type dict_entry } from "./utility";
+import { BinaryStream, type dict_entry } from "./Utility";
 
 export interface IHuffmanTree {
     encode(str: string): string | null;

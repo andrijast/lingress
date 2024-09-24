@@ -1,6 +1,6 @@
 {
   "name": "lingress",
-  "module": "src/main.ts",
+  "module": "src/Main.ts",
   "type": "module",
   "devDependencies": {
     "@types/bun": "latest"
@@ -10,5 +10,9 @@
   },
   "dependencies": {
     "@rimbu/sorted": "^2.1.2"
+  },
+  "scripts": {
+    "main": "bun src/Main.ts",
+    "dev": "bun main --dev"
   }
 }

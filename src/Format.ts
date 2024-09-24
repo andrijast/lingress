@@ -1,4 +1,4 @@
-import type { byte_array, unicode_string } from "./utility";
+import type { byte_array, unicode_string } from "./Utility";
 
 
 

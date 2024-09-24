@@ -1,24 +1,37 @@
-import type { byte_array, dict_entry, unicode_string } from "./utility";
-import { BinaryStream, debug } from "./utility";
+import type { byte_array, dict_entry, unicode_string } from "./Utility";
+import { BinaryStream, debug } from "./Utility";
 import { pack_data, unpack_data } from "./Format";
 import { tokenize, stylize, type token_data } from "./Lexing";
 import { HuffmanTree, full_dict, combineDicts } from "./HuffmanTree";
 
+const headers = new Map<string, string>([
+    ["0", "normal"],
+    ["10", "cap"],
+    ["110", "acap"],
+    ["111", "done"],
+]);
+
 function encode_header(word: token_data): string {
     if (word.cap) return "10";
-    if (word.acap) return "11";
+    if (word.acap) return "110";
     else return "0";
 }
 
 function decode_header(bs: BinaryStream): token_data | null {
-    let ret = {word: "----"};
-    let x;
-    x = bs.take(); if (!x) return null;
-    if (x === "0") return ret;
-    x = bs.take(); if (!x) return null;
-    if (x === "0") return {...ret, cap: true};
-    if (x === "1") return {...ret, acap: true};
-    return null;
+    let path = "";
+    while (true) {
+        const x = bs.take();
+        if (!x) return null;
+        path += x;
+        if (headers.has(path)) break;
+    }
+    let ret = {word: "---"}; // placeholder
+    switch (headers.get(path)) {
+        case "normal": return ret;
+        case "cap": return {...ret, cap: true};
+        case "acap": return {...ret, acap: true};
+        default: return null;
+    }
 }
 
 export function encode(text: unicode_string): byte_array {
@@ -86,11 +99,9 @@ export function decode(cipher: byte_array): unicode_string {
 
     while (true) {
         const which = decode_header(bs);
+        if (!which) break;
         const word = hm.decode(bs);
-        if (!which || !word) {
-            if (bs.take() !== null) throw new Error("decoding error: huffman decode");
-            else break; // either empty or padding bits
-        }
+        if (!word) throw new Error("decoding error: huffman decode");
         tokens.push({...which, word: word});
     }
 
@@ -100,29 +111,5 @@ export function decode(cipher: byte_array): unicode_string {
 
 
 }
-
-
-async function run(input: unicode_string) {
-
-    const org_sz = new Blob([input]).size
-    console.log(`original size: ${org_sz}`)
-
-    const enc = encode(input)
-    const enc_sz = enc.length
-    console.log(`compressed size: ${enc_sz}`)
-
-    const ratio = (org_sz - enc_sz) / org_sz * 100
-    console.log(`compression ratio: ${ratio.toFixed(2)}%`)
-
-    const dec = decode(enc)
-    const dec_sz = new Blob([dec]).size
-    console.log(`decompressed size: ${dec_sz}`)
-    debug("decompressed", dec);
-
-    console.log("correctness:", dec === input);
-
-}
-
-run(await Bun.file("./samples/enwik5.txt").text());
 
 

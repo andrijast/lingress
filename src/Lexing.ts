@@ -1,4 +1,4 @@
-import type { unicode_string } from "./utility";
+import type { unicode_string } from "./Utility";
 import { HuffmanTree } from "./HuffmanTree";
 
 export type token_data = {

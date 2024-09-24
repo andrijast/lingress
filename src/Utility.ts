@@ -44,9 +44,9 @@ export class BinaryStream implements IBinaryStream {
     }
 
     toBytes(): byte_array {
-        const n = this.buffer.length;
-        const str = this.buffer.join('').padEnd(Math.ceil(n / 8) * 8, '0');
-        const byteChunks = str.match(/.{1,8}/g) || [];
+        const len = this.buffer.length;
+        const alen = Math.ceil(len / 8) * 8;
+        const byteChunks = this.buffer.join('').padEnd(alen, '1').match(/.{8}/g) || [];
         const byteArray = new Uint8Array(byteChunks.map(byte => parseInt(byte, 2)));
         return byteArray;
     }
