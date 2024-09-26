@@ -42,11 +42,11 @@ export function encode(text: unicode_string): byte_array {
     debug("tokens_full", tokens.slice(0, 1000));
 
     // collecting additions
-    const hm1 = new HuffmanTree();
+    const hm_base = new HuffmanTree();
     const additions_set = new Set<string>();
     let max_rank = 0;
     for (const token of tokens) {
-        const rank = hm1.check(token.word);
+        const rank = hm_base.check(token.word);
         if (!rank) {
             additions_set.add(token.word);
         } else {
@@ -68,11 +68,11 @@ export function encode(text: unicode_string): byte_array {
 
 
     // constructing coding sequence
-    const hm2 = new HuffmanTree(dict);
+    const hm = new HuffmanTree(dict);
     const ret = new BinaryStream();
     for (const word of tokens) {
         const head = encode_header(word);
-        const code = hm2.encode(word.word)
+        const code = hm.encode(word.word)
         if (!code) throw new Error(`what happened?? ${word}`);
         ret.appendString(head)
         ret.appendString(code)

@@ -28,7 +28,7 @@ export function unpack_data(cipher: byte_array): [unicode_string[], number, byte
     const addon_sz = (ah << 8) | al;
 
     const addon = cipher.slice(4, 4 + addon_sz);
-    const additions = new TextDecoder().decode(addon).split('\x00');
+    const additions = addon_sz == 0 ? [] : new TextDecoder().decode(addon).split('\x00');
 
     const coding = cipher.slice(4 + addon_sz);
 
